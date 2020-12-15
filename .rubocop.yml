@@ -12,3 +12,7 @@ Metrics/PerceivedComplexity:
   Enabled: false
 Style/SignalException:
   Enabled: false
+Style/NumericPredicate:
+  Enabled: false
+Style/MethodParameterName:
+  Enabled: false

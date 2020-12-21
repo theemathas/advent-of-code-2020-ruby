@@ -19,3 +19,6 @@ Style/NumericPredicate:
   Enabled: false
 Naming/MethodParameterName:
   Enabled: false
+
+Lint/UnusedMethodArgument:
+  AutoCorrect: false

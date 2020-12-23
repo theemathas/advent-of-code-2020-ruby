@@ -19,6 +19,8 @@ Style/NumericPredicate:
   Enabled: false
 Naming/MethodParameterName:
   Enabled: false
+Style/GlobalVars:
+  Enabled: false
 
 Lint/UnusedMethodArgument:
   AutoCorrect: false

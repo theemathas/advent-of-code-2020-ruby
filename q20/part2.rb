@@ -14,4 +14,105 @@ part1_search_result = [
   [116, 4], [18, 2], [75, 4], [33, 0], [50, 4], [110, 6], [87, 3], [81, 7], [38, 2], [142, 3], [76, 2], [86, 1]
 ]
 
-# TODO
+input = IO.read(File.join(__dir__, 'input.txt'))
+
+$TILE_SIZE = 10 # Number of "pixels" in a tile's row/column
+$ROW_LENGTH = Math.sqrt(input.scan(/\n\n/).count + 1).to_i # Number of tiles in a row/column
+
+class Tile
+  attr_reader :tile_id, :contents
+
+  def self.from_string(string)
+    lines = string.lines(chomp: true)
+
+    match = /\ATile (\d+):\Z/.match(lines[0])
+    tile_id = Integer(match[1], 10)
+
+    new(tile_id, lines[1..])
+  end
+
+  def initialize(tile_id, contents)
+    @tile_id = tile_id
+    @contents = contents
+    freeze
+    fail unless @contents.size == $TILE_SIZE
+    fail unless @contents.all? { |line| line.is_a?(String) && (line.size == $TILE_SIZE) }
+  end
+
+  # Rotate the tile counterclockwise
+  def rotate
+    new_contents = (0...$TILE_SIZE).map do |i|
+      ((0...$TILE_SIZE).map do |j|
+        @contents[j].chars[$TILE_SIZE - 1 - i]
+      end).join
+    end
+    Tile.new(@tile_id, new_contents)
+  end
+
+  # Flip the tile top-bottom. (Top becomes Bottom and vice versa)
+  def flip
+    Tile.new(@tile_id, @contents.reverse)
+  end
+
+  def orient(orientation)
+    case orientation
+    when 0..3
+      answer = self
+      orientation.times { answer = answer.rotate }
+    when 4..7
+      answer = flip
+      (orientation - 4).times { answer = answer.rotate }
+    else fail
+    end
+    answer
+  end
+end
+
+tiles = input.split("\n\n").map(&Tile.method(:from_string))
+fail unless tiles.size == $ROW_LENGTH**2
+
+arranged_tiles = part1_search_result.map do |(tile_index, orientation)|
+  contents = tiles[tile_index].orient(orientation).contents
+  contents[1...-1].map { |line| line.chars[1...-1].join }
+end
+
+picture = arranged_tiles.each_slice($ROW_LENGTH).flat_map do |tile_row|
+  tile_row.transpose.map(&:join)
+end
+$PICTURE_SIZE = picture.size
+fail unless picture.all? { |row| row.is_a?(String) && (row.size == $PICTURE_SIZE) }
+
+# To flip, just do picture.reverse
+def rotate_picture(picture)
+  (0...$PICTURE_SIZE).map do |i|
+    ((0...$PICTURE_SIZE).map do |j|
+      picture[j].chars[$PICTURE_SIZE - 1 - i]
+    end).join
+  end
+end
+
+# I tried flipping and rotating until there's at least one monster found.
+picture = picture.reverse
+picture = rotate_picture(picture)
+
+monster_pattern = [
+  '                  # ',
+  '#    ##    ##    ###',
+  ' #  #  #  #  #  #   '
+]
+monster_coords = monster_pattern.each_with_index.flat_map do |string, x|
+  string.chars.each_with_index.filter_map do |char, y|
+    [x, y] if char == '#'
+  end
+end
+
+monsters = (0...$PICTURE_SIZE).to_a.product((0...$PICTURE_SIZE).to_a).filter do |(x, y)|
+  monster_coords.all? { |(dx, dy)| !picture[x + dx].nil? and picture[x + dx].chars[y + dy] == '#' }
+end
+p monsters
+
+monsters.each do |(x, y)|
+  monster_coords.each { |(dx, dy)| picture[x + dx][y + dy] = 'O' }
+end
+puts picture
+p picture.join.count('#')
